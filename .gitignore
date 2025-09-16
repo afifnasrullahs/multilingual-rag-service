@@ -1,0 +1,32 @@
+﻿.env
+__pycache__/
+*.pyc
+.temp*/
+logs/
+.venv/
+temp_uploads/
+*.log
+.temp_uploads/
+temp_uploads/
+credentials/
+enterprise_knowledge_base/**
+!enterprise_knowledge_base/.keep
+# Ignore virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore system files
+*.dll
+*.pyd
+*.lib
+
+# Ignore IDE settings
+.vscode/
+.idea/
