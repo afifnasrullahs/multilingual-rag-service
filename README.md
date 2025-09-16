@@ -1,7 +1,5 @@
 ## RAG Flask App (ID/EN)
 
-![UI](docs/screenshot.png)
-
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://www.python.org/) [![Flask](https://img.shields.io/badge/Flask-3.x-green)](https://flask.palletsprojects.com/) [![Lint](https://img.shields.io/badge/Lint-ruff-black)](https://github.com/astral-sh/ruff) [![Precommit](https://img.shields.io/badge/pre--commit-enabled-brightgreen)](https://pre-commit.com/)
 
 ### Struktur Proyek
