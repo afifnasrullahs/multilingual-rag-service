@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG QA</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 24px; background: #ffffff; color: #111; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; font-size: 22px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="text"] { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+    input[type="file"] { width: 100%; }
+    button { background: #111827; color: #fff; border: 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+    button:disabled { background: #6b7280; cursor: not-allowed; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .sources { margin-top: 8px; }
+    .source { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-top: 6px; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>RAG QA</h1>
+    <div class="card">
+      <label for="question">Pertanyaan / Question</label>
+      <input type="text" id="question" placeholder="Tulis pertanyaan Anda... / Ask your question..." />
+      <div style="margin-top:10px">
+        <label for="files" class="muted">Upload file sementara (opsional)</label>
+        <input type="file" id="files" multiple accept=".txt,.md,.csv,.json,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg" />
+        <div class="muted">File tidak disimpan. Gunakan jika ingin menambahkan konteks sementara.</div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="submitAsk()" id="askBtn">Kirim</button>
+        <span id="latency" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Jawaban</strong>
+      <div id="answer" style="margin-top:8px;"></div>
+      <div class="sources" id="sources"></div>
+    </div>
+  </div>
+
+  <script>
+    async function submitAsk() {
+      const question = document.getElementById('question').value.trim();
+      const files = document.getElementById('files').files;
+      if (!question) { alert('Masukkan pertanyaan.'); return; }
+      setLoading(true);
+      try {
+        let data;
+        if (files && files.length > 0) {
+          const form = new FormData();
+          form.append('question', question);
+          for (let i = 0; i < files.length; i++) form.append('files', files[i]);
+          const resp = await fetch('/upload', { method: 'POST', body: form });
+          data = await resp.json();
+        } else {
+          const resp = await fetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) });
+          data = await resp.json();
+        }
+        renderResult(data);
+      } catch (e) {
+        renderError(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderResult(data) {
+      const answerEl = document.getElementById('answer');
+      const sourcesEl = document.getElementById('sources');
+      const latencyEl = document.getElementById('latency');
+      if (data.error) {
+        answerEl.textContent = data.error;
+        sourcesEl.innerHTML = '';
+        latencyEl.textContent = '';
+        return;
+      }
+      const text = data.answer || data.result || '';
+      // Basic markdown-ish formatting to HTML
+      const html = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1<\/strong>')
+        .replace(/^\s*\*\s+/gm, '• ')
+        .replace(/\n\n/g, '<br/><br/>')
+        .replace(/\n/g, '<br/>');
+      answerEl.innerHTML = html;
+      latencyEl.textContent = data.response_time ? `(${data.response_time.toFixed(2)}s)` : '';
+      sourcesEl.innerHTML = '';
+      if (data.sources && data.sources.length) {
+        data.sources.forEach((s) => {
+          const div = document.createElement('div');
+          div.className = 'source';
+          div.innerHTML = `<strong>${s.file}</strong> <span class=\"muted\">${s.type}</span><div class=\"muted\">${s.preview}</div>`;
+          sourcesEl.appendChild(div);
+        });
+      }
+    }
+
+    function renderError(e) {
+      document.getElementById('answer').textContent = 'Terjadi kesalahan. Coba lagi.';
+      document.getElementById('latency').textContent = '';
+      document.getElementById('sources').innerHTML = '';
+      console.error(e);
+    }
+
+    function setLoading(isLoading) {
+      document.getElementById('askBtn').disabled = isLoading;
+    }
+  </script>
+</body>
+</html>
